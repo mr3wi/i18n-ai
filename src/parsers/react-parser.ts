@@ -3,8 +3,8 @@ import _traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { readFileSync } from 'fs';
 
-
-const traverse = typeof _traverse === "function" ? _traverse : _traverse.default;
+const traverse =
+  typeof _traverse === 'function' ? _traverse : _traverse.default;
 
 export interface ExtractedString {
   text: string;
@@ -30,7 +30,7 @@ export class ReactParser {
 
       traverse(ast, {
         // Texte dans les éléments JSX: <h1>Bonjour</h1>
-        JSXText: (path) => {
+        JSXText: path => {
           const text = path.node.value.trim();
           if (this.shouldExtract(text)) {
             this.extractedStrings.push({
@@ -44,7 +44,7 @@ export class ReactParser {
         },
 
         // Attributs JSX: <Button label="Confirmer" />
-        JSXExpressionContainer: (path) => {
+        JSXExpressionContainer: path => {
           if (t.isStringLiteral(path.node.expression)) {
             const text = path.node.expression.value;
             if (this.shouldExtract(text)) {
@@ -60,7 +60,7 @@ export class ReactParser {
         },
 
         // Strings littérales: const message = "Bonjour"
-        StringLiteral: (path) => {
+        StringLiteral: path => {
           // Éviter les doublons avec JSX
           if (this.isInJSX(path)) return;
 
@@ -77,7 +77,7 @@ export class ReactParser {
         },
 
         // Template literals: `Bonjour ${name}`
-        TemplateLiteral: (path) => {
+        TemplateLiteral: path => {
           if (this.isInJSX(path)) return;
 
           const text = this.reconstructTemplateLiteral(path.node);
@@ -139,14 +139,18 @@ export class ReactParser {
   private getJSXAttributeContext(path: any): string {
     const jsxAttribute = path.findParent((p: any) => t.isJSXAttribute(p.node));
     if (jsxAttribute && t.isJSXAttribute(jsxAttribute.node)) {
-      const attrName = t.isJSXIdentifier(jsxAttribute.node.name) ? jsxAttribute.node.name.name : 'attribute';
+      const attrName = t.isJSXIdentifier(jsxAttribute.node.name)
+        ? jsxAttribute.node.name.name
+        : 'attribute';
       return `JSX attribute: ${attrName}`;
     }
     return 'JSX attribute';
   }
 
   private getVariableContext(path: any): string {
-    const variableDeclarator = path.findParent((p: any) => t.isVariableDeclarator(p.node));
+    const variableDeclarator = path.findParent((p: any) =>
+      t.isVariableDeclarator(p.node)
+    );
     if (variableDeclarator && t.isVariableDeclarator(variableDeclarator.node)) {
       const id = variableDeclarator.node.id;
       if (t.isIdentifier(id)) {
