@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { ExtractedString } from './parsers/react-parser';
 
 export interface TranslationResult {
@@ -51,7 +53,10 @@ export class OpenAITranslator implements TranslationProvider {
       });
 
       const data = (await response.json()) as { choices: { message?: { content?: string } }[] };
-      return data.choices[0]?.message?.content?.trim() || text;
+      if (Array.isArray(data.choices) && data.choices.length > 0) {
+        return data.choices[0]?.message?.content?.trim() || text;
+      }
+      return text;
     } catch (error) {
       console.error('OpenAI translation error:', error);
       throw new Error(`Translation failed: ${error}`);
@@ -89,7 +94,10 @@ export class OpenAITranslator implements TranslationProvider {
       const data = (await response.json()) as {
         choices: { message?: { content?: string } }[];
       };
-      const result = data.choices[0]?.message?.content?.trim();
+      let result: string | undefined = undefined;
+      if (Array.isArray(data.choices) && data.choices.length > 0) {
+        result = data.choices[0]?.message?.content?.trim();
+      }
 
       if (result) {
         return result.split('|||').map((t) => t.trim());
@@ -280,9 +288,6 @@ export class AITranslationService {
     extractedStrings: ExtractedString[],
     outputDir: string = './locales'
   ): void {
-    const fs = require('fs');
-    const path = require('path');
-
     // Créer le dossier de sortie s'il n'existe pas
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });

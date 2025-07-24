@@ -136,8 +136,8 @@ program
 
     try {
       // Charger les chaînes extraites
-      const rawData = require(join(process.cwd(), options.file));
-      const extractedStrings = rawData.files.flatMap((file: any) => file.strings);
+      const rawData = await import(join(process.cwd(), options.file));
+      const extractedStrings = rawData.default.files.flatMap((file: any) => file.strings);
 
       if (extractedStrings.length === 0) {
         spinner.stop();
