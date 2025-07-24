@@ -116,11 +116,14 @@ program
     console.log(chalk.blue('  2. Run: translate-ai generate'));
   });
 
-// Commande: generate (placeholder)
+// Commande: generate
 program
   .command('generate')
   .description('Generate translations using AI')
   .option('-f, --file <file>', 'Input file with extracted strings', 'translatable-strings.json')
+  .option('-p, --provider <provider>', 'Translation provider (openai, deepl)', 'openai')
+  .option('-l, --languages <languages...>', 'Target languages', ['fr', 'es'])
+  .option('-o, --output <dir>', 'Output directory for translations', './locales')
   .action(async (options) => {
     if (!existsSync(options.file)) {
       console.error(chalk.red(`❌ File not found: ${options.file}`));
@@ -128,12 +131,67 @@ program
       return;
     }
 
-    console.log(chalk.yellow('🚧 Translation generation coming soon!'));
-    console.log(chalk.blue('This will integrate with AI services like:'));
-    console.log('  • OpenAI GPT');
-    console.log('  • Google Translate');
-    console.log('  • DeepL');
-    console.log('  • Custom translation models');
+    const { AITranslationService, OpenAITranslator, DeepLTranslator } = await import('./translator');
+    const spinner = ora('Initializing translation service...').start();
+
+    try {
+      // Charger les chaînes extraites
+      const rawData = require(join(process.cwd(), options.file));
+      const extractedStrings = rawData.files.flatMap((file: any) => file.strings);
+
+      if (extractedStrings.length === 0) {
+        spinner.stop();
+        console.log(chalk.yellow('⚠️  No strings to translate found.'));
+        return;
+      }
+
+      // Initialiser le service de traduction
+      const translationService = new AITranslationService();
+
+      // Configurer le provider
+      if (options.provider === 'openai') {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+          spinner.stop();
+          console.error(chalk.red('❌ OPENAI_API_KEY environment variable required'));
+          console.log(chalk.blue('💡 Set your API key: export OPENAI_API_KEY=your_key'));
+          return;
+        }
+        translationService.addProvider(new OpenAITranslator(apiKey));
+      } else if (options.provider === 'deepl') {
+        const apiKey = process.env.DEEPL_API_KEY;
+        if (!apiKey) {
+          spinner.stop();
+          console.error(chalk.red('❌ DEEPL_API_KEY environment variable required'));
+          console.log(chalk.blue('💡 Set your API key: export DEEPL_API_KEY=your_key'));
+          return;
+        }
+        translationService.addProvider(new DeepLTranslator(apiKey));
+      }
+
+      spinner.text = `Translating ${extractedStrings.length} strings to ${options.languages.length} languages...`;
+
+      // Générer les traductions
+      const translations = await translationService.translateStrings(
+        extractedStrings,
+        options.languages,
+        options.provider === 'openai' ? 'OpenAI' : 'DeepL'
+      );
+
+      spinner.text = 'Generating translation files...';
+
+      // Sauvegarder les fichiers
+      translationService.generateTranslationFiles(translations, extractedStrings, options.output);
+
+      spinner.stop();
+      console.log(chalk.green('\n✨ Translation generation completed!'));
+      console.log(chalk.blue(`📁 Files saved to: ${options.output}`));
+      console.log(chalk.blue('💡 Next: Integrate the translation files in your app'));
+    } catch (error) {
+      spinner.stop();
+      console.error(chalk.red('❌ Translation failed:'), error);
+      process.exit(1);
+    }
   });
 
 // Commande: status
