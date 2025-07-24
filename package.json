@@ -1,0 +1,44 @@
+{
+  "name": "translate-ai",
+  "version": "0.1.0",
+  "description": "AI-powered translation assistant for developers",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "translate-ai": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "translation",
+    "i18n",
+    "ai",
+    "cli",
+    "react"
+  ],
+  "author": "Votre nom",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.22.0",
+    "@babel/traverse": "^7.22.0",
+    "@babel/types": "^7.22.0",
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "glob": "^10.3.0",
+    "inquirer": "^9.2.0",
+    "ora": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/babel__parser": "^7.1.1",
+    "@types/babel__traverse": "^7.20.1",
+    "@types/inquirer": "^9.0.8",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.4.0",
+    "jest": "^29.6.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.1.0"
+  }
+}
