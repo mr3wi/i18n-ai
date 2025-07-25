@@ -35,6 +35,10 @@ translate-ai scan -p "src/**/*.tsx" "src/**/*.jsx"
 export OPENAI_API_KEY=sk-your-key-here
 translate-ai generate -p openai -l fr es de
 
+# Avec Google Gemini (nécessite GEMINI_API_KEY)
+export GEMINI_API_KEY=your-gemini-key
+translate-ai generate -p gemini -l fr es de
+
 # Avec DeepL (nécessite DEEPL_API_KEY)
 export DEEPL_API_KEY=your-deepl-key
 translate-ai generate -p deepl -l fr es it
@@ -155,10 +159,12 @@ translate-ai generate -p openai -l fr es it de pt
 ```bash
 # .env
 OPENAI_API_KEY=sk-your-openai-key
+GEMINI_API_KEY=your-gemini-key
 DEEPL_API_KEY=your-deepl-key
 
 # Ou export
 export OPENAI_API_KEY=sk-your-key
+export GEMINI_API_KEY=your-gemini-key
 export DEEPL_API_KEY=your-key
 ```
 
