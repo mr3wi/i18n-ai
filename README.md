@@ -37,10 +37,20 @@ Options disponibles :
 - `-p, --patterns <patterns...>` : Patterns de fichiers à inclure
 - `-e, --exclude <patterns...>` : Patterns à exclure
 
-### 3. Générer les traductions (à venir)
+### 3. Générer les traductions
 
 ```bash
-translate-ai generate
+# Avec OpenAI (nécessite OPENAI_API_KEY)
+export OPENAI_API_KEY=sk-your-key-here
+translate-ai generate -p openai -l fr es de
+
+# Avec Google Gemini (nécessite GEMINI_API_KEY)
+export GEMINI_API_KEY=your-gemini-key
+translate-ai generate -p gemini -l fr es de
+
+# Avec DeepL (nécessite DEEPL_API_KEY)
+export DEEPL_API_KEY=your-deepl-key
+translate-ai generate -p deepl -l fr es it
 ```
 
 ### 4. Vérifier le statut
@@ -156,6 +166,7 @@ translate-ai scan
 
 ### Phase 2 - Traductions IA
 - Intégration OpenAI/GPT
+- Support Google Gemini
 - Support Google Translate API
 - Support DeepL API
 - Gestion du contexte pour traductions précises
