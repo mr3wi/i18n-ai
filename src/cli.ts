@@ -121,7 +121,7 @@ program
   .command('generate')
   .description('Generate translations using AI')
   .option('-f, --file <file>', 'Input file with extracted strings', 'translatable-strings.json')
-  .option('-p, --provider <provider>', 'Translation provider (openai, deepl)', 'openai')
+  .option('-p, --provider <provider>', 'Translation provider (openai, gemini, deepl)', 'openai')
   .option('-l, --languages <languages...>', 'Target languages', ['fr', 'es'])
   .option('-o, --output <dir>', 'Output directory for translations', './locales')
   .action(async (options) => {
@@ -131,7 +131,7 @@ program
       return;
     }
 
-    const { AITranslationService, OpenAITranslator, DeepLTranslator } = await import('./translator');
+    const { AITranslationService, OpenAITranslator, GeminiTranslator, DeepLTranslator } = await import('./translator');
     const spinner = ora('Initializing translation service...').start();
 
     try {
@@ -158,6 +158,16 @@ program
           return;
         }
         translationService.addProvider(new OpenAITranslator(apiKey));
+      } else if (options.provider === 'gemini') {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+          spinner.stop();
+          console.error(chalk.red('❌ GEMINI_API_KEY environment variable required'));
+          console.log(chalk.blue('💡 Set your API key: export GEMINI_API_KEY=your_key'));
+          console.log(chalk.blue('💡 Get your key at: https://makersuite.google.com/app/apikey'));
+          return;
+        }
+        translationService.addProvider(new GeminiTranslator(apiKey));
       } else if (options.provider === 'deepl') {
         const apiKey = process.env.DEEPL_API_KEY;
         if (!apiKey) {
@@ -172,11 +182,9 @@ program
       spinner.text = `Translating ${extractedStrings.length} strings to ${options.languages.length} languages...`;
 
       // Générer les traductions
-      const translations = await translationService.translateStrings(
-        extractedStrings,
-        options.languages,
-        options.provider === 'openai' ? 'OpenAI' : 'DeepL'
-      );
+      const providerName =
+        options.provider === 'openai' ? 'OpenAI' : options.provider === 'gemini' ? 'Gemini' : 'DeepL';
+      const translations = await translationService.translateStrings(extractedStrings, options.languages, providerName);
 
       spinner.text = 'Generating translation files...';
 
