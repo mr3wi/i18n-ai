@@ -145,6 +145,129 @@ export class OpenAITranslator implements TranslationProvider {
   }
 }
 
+export class GeminiTranslator implements TranslationProvider {
+  name = 'Gemini';
+  private apiKey: string;
+  private baseUrl: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  }
+
+  async translate(text: string, targetLang: string, context?: string): Promise<string> {
+    const prompt = this.buildPrompt(text, targetLang, context);
+
+    try {
+      const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const data = (await response.json()) as {
+        candidates: { content?: { parts?: { text?: string }[] } }[];
+      };
+
+      if (data.candidates && data.candidates.length > 0) {
+        const content = data.candidates[0]?.content?.parts?.[0]?.text?.trim();
+        return content || text;
+      }
+      return text;
+    } catch (error) {
+      console.error('Gemini translation error:', error);
+      throw new Error(`Translation failed: ${error}`);
+    }
+  }
+
+  async translateBatch(texts: string[], targetLang: string, contexts?: string[]): Promise<string[]> {
+    const batchPrompt = this.buildBatchPrompt(texts, targetLang, contexts);
+
+    try {
+      const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: batchPrompt,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const data = (await response.json()) as {
+        candidates: { content?: { parts?: { text?: string }[] } }[];
+      };
+
+      if (data.candidates && data.candidates.length > 0) {
+        const content = data.candidates[0]?.content?.parts?.[0]?.text?.trim();
+        if (content) {
+          return content.split('|||').map((t) => t.trim());
+        }
+      }
+
+      return texts; // Fallback
+    } catch (error) {
+      console.error('Gemini batch translation error:', error);
+      // Fallback to individual translations
+      const results = [];
+      for (let i = 0; i < texts.length; i++) {
+        try {
+          results.push(await this.translate(texts[i], targetLang, contexts?.[i]));
+        } catch {
+          results.push(texts[i]); // Keep original on error
+        }
+      }
+      return results;
+    }
+  }
+
+  private buildPrompt(text: string, targetLang: string, context?: string): string {
+    let prompt = `You are a professional translator specializing in software localization. Translate the following text to ${targetLang}:\n\n"${text}"`;
+
+    if (context) {
+      prompt += `\n\nContext: This text appears in ${context}`;
+    }
+
+    prompt += '\n\nProvide only the translation, no explanation or additional text.';
+    return prompt;
+  }
+
+  private buildBatchPrompt(texts: string[], targetLang: string, contexts?: string[]): string {
+    let prompt = `You are a professional translator specializing in software localization. Translate the following texts to ${targetLang}. Return only the translations separated by ||| markers (three pipe characters):\n\n`;
+
+    texts.forEach((text, index) => {
+      prompt += `${index + 1}. "${text}"`;
+      if (contexts?.[index]) {
+        prompt += ` (Context: ${contexts[index]})`;
+      }
+      prompt += '\n';
+    });
+
+    prompt += '\nReturn format: translation1|||translation2|||translation3 (etc.)';
+    return prompt;
+  }
+}
+
 export class DeepLTranslator implements TranslationProvider {
   name = 'DeepL';
   private apiKey: string;
